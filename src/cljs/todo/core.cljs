@@ -3,7 +3,7 @@
               [reagent.session :as session]
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]
-              [ajax.core :refer [GET POST]]
+              [ajax.core :refer [GET POST DELETE]]
               [clojure.string :as str]))
 
 (defonce state (atom {}))
@@ -43,6 +43,11 @@
      :handler #(swap! state update-in [id :done] not)
      :error-handler error-handler}))
 
+(defn delete-todo [id]
+  (DELETE (str "/api/todo/" id)
+    {:handler #(swap! state dissoc id)
+     :error-handler error-handler}))
+
 (defn valid-todo? [text]
   (not (str/blank? (str/trim text))))
 
@@ -66,7 +71,12 @@
       :on-click #(toggle-todo id)}
      (if done [:span.glyphicon.glyphicon-check]
               [:span.glyphicon.glyphicon-unchecked])]]
-   [:td text]])
+   [:td text]
+   [:td {:width "50px"}
+    [:button.btn.btn-link
+     {:type "button"
+      :on-click #(delete-todo id)}
+     [:span.glyphicon.glyphicon-trash]]]])
 
 (defn todo-list []
   [:table.table.table-striped
@@ -121,7 +131,39 @@
    [nav]
    [:div.container
     [:h2 "About To Dooooodle"]
-    [:div [:p "It slices! It dices!"]]]])
+    [:div
+     [:p "This is a single-page app written in ClojureScript and Reagent,
+      styled with Bootstrap. There are two client-side routes: / and
+      /about which can be controlled in the nav. On the main page, there
+      is a list of todos where each todo has a toggleable checkbox, the
+      todo description, and a delete button. At the bottom is a text box
+      for creating new todo items and an add button. Clicking add without
+      a description will display an error message."]
+     [:p "The server side is a Ring server with Compojure routes. Both url
+     routes will load the SPA page containing the client-side app."]
+     [:p "The client SPA communicates with the server via the following API
+     calls, which all take and return JSON:"]
+     [:ul
+      [:li [:p [:strong "GET /api/list"]
+            [:br]
+            "Returns: [ [<id>: {\"text\": <todo-text>, \"done\": true/false}], ... ]"
+            [:br]
+            "Gets an ordered list of TODO items."]]
+      [:li [:p [:strong "POST /api/todo"]
+            [:br]
+            "Takes: {\"text\": <todo-text>, \"done\": true/false}"
+            "Returns:  {\"id\": <todo-uuid>}"
+            [:br]
+            "Accepts a new todo and returns a uuid representing the TODO."]]
+      [:li [:p [:strong "POST /api/toggle"]
+            [:br]
+            "Takes: {\"id\": <todo-uuid>}"
+            [:br]
+            "Toggles the \"done\" state of the UUID. Returns HTTP status 200 on
+            success, or 404 if the TODO item is not found."]]
+      [:li [:p [:strong "DELETE /api/todo/<id>"]
+            [:br]
+            "Deletes the item and returns 200 or returns 404 if not found."]]]]]])
 
 (defn current-page []
   [:div [(session/get :current-page)]])

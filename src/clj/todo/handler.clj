@@ -1,6 +1,6 @@
 (ns todo.handler
   (:require [ring.util.response :refer [response created]]
-            [compojure.core :refer [GET POST defroutes]]
+            [compojure.core :refer [GET POST DELETE defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
             [todo.middleware :refer [wrap-middleware]]
@@ -94,6 +94,13 @@
       (if (get store id)
         (response nil)
         (not-found nil))))
+
+  (DELETE "/api/todo/:id" [id]
+    (if (get @state id)
+      (do
+        (swap! state dissoc id)
+        (response nil))
+      (not-found nil)))
 
   ;; resources
   (resources "/")
