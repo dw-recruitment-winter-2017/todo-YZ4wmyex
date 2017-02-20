@@ -152,6 +152,7 @@
       [:li [:p [:strong "POST /api/todo"]
             [:br]
             "Takes: {\"text\": <todo-text>, \"done\": true/false}"
+            [:br]
             "Returns:  {\"id\": <todo-uuid>}"
             [:br]
             "Accepts a new todo and returns a uuid representing the TODO."]]
