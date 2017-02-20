@@ -1,9 +1,13 @@
 (ns todo.handler
-  (:require [compojure.core :refer [GET defroutes]]
+  (:require [ring.util.response :refer [response]]
+            [compojure.core :refer [GET defroutes]]
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
             [todo.middleware :refer [wrap-middleware]]
-            [config.core :refer [env]]))
+            [config.core :refer [env]]
+            [todo.data :refer [lorem-ipsum-store get-todos]]))
+
+;;;; Pages
 
 (def mount-target
   [:div#app
@@ -26,11 +30,23 @@
      mount-target
      (include-js "/js/app.js")]))
 
+;;;; State
+
+(defonce state (atom lorem-ipsum-store))
+
+;;;; Routes
 
 (defroutes routes
+  ;; pages
   (GET "/" [] (loading-page))
   (GET "/about" [] (loading-page))
-  
+
+  ;; api
+  (GET "/api/list" []
+    (response (get-todos @state)))
+
+
+  ;; resources
   (resources "/")
   (not-found "Not Found"))
 
