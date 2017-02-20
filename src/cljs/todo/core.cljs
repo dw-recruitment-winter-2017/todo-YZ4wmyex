@@ -18,10 +18,6 @@
   (reset! state
     (into (array-map) todo-list)))
 
-(defn create-handler [created todo]
-  (let [loc (.getResponseHeader created "Location")]
-    (swap! state assoc loc todo)))
-
 (defn get-todos []
   (GET "/api/list"
     {:format :json
@@ -33,11 +29,19 @@
 (defn add-todo [text]
   (let [todo {:text text :done false}]
     (POST "/api/todo"
-      {:params (clj->js todo)
+      {:params todo
        :format :json
-       :response-format {:read identity :description "raw"}
-       :handler #(create-handler % todo)
+       :response-format :json
+       :keywords? true
+       :handler #(swap! state assoc (:id %) todo)
        :error-handler error-handler})))
+
+(defn toggle-todo [id]
+  (POST "/api/toggle"
+    {:params {:id id}
+     :format :json
+     :handler #(swap! state update-in [id :done] not)
+     :error-handler error-handler}))
 
 (defn valid-todo? [text]
   (not (str/blank? (str/trim text))))
@@ -54,15 +58,20 @@
      [:li [:a {:href "/"} "Home"]]
      [:li [:a {:href "/about"} "About"]]]]])
 
+(defn todo-row [id text done]
+  [:tr {:key id}
+   [:td {:width "50px"}
+    [:button.btn.btn-link
+     {:type "button"
+      :on-click #(toggle-todo id)}
+     (if done [:span.glyphicon.glyphicon-check]
+              [:span.glyphicon.glyphicon-unchecked])]]
+   [:td text]])
+
 (defn todo-list []
   [:table.table.table-striped
    [:tbody
-    (map (fn [[loc {:keys [text done]}]]
-           [:tr {:key loc}
-            [:td {:width "50px"}
-             (if done [:span.glyphicon.glyphicon-check]
-                      [:span.glyphicon.glyphicon-unchecked])]
-            [:td text]])
+    (map (fn [[id {:keys [text done]}]] (todo-row id text done))
       @state)]])
 
 (defn todo-text [new-todo]

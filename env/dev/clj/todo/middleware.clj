@@ -6,7 +6,7 @@
 
 (defn wrap-middleware [handler]
   (-> handler
-      wrap-restful-format
       (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] false))
       wrap-exceptions
+      wrap-restful-format
       wrap-reload))

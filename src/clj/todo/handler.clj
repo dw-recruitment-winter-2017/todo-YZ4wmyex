@@ -57,6 +57,10 @@
 (defn get-todos [store]
   (sequence store))
 
+(defn toggle-todo [store id]
+  (when (get store id)
+    (update-in store [id :done] not)))
+
 ;; for testing
 
 (def lorem-ipsum-store
@@ -82,7 +86,14 @@
   (POST "/api/todo" {:keys [params]}
     (let [id (new-uuid)]
       (swap! state assoc id params)
-      (created (str "/api/todo/" id))))
+      (created (str "/api/todo/" id) {:id id})))
+
+  (POST "/api/toggle" {:keys [params]}
+    (let [id (:id params)
+          store (swap! state toggle-todo id)]
+      (if (get store id)
+        (response nil)
+        (not-found nil))))
 
   ;; resources
   (resources "/")
